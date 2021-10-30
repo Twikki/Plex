@@ -29,14 +29,29 @@ function Show-Title() {
     
     }
     
-    $BackupFolder = Get-Date -Format "yyyy/dd/MM_hh.mm.ss"
+    # Specifies Path for the backup
+    $PlexBackupFolderPath = "C:\PlexBackup"
     
+    # Grabs the current date and time
+    $BackupTime = Get-Date -Format "yyyy/dd/MM_hh.mm.ss"
+    
+    
+    # Creates default Plex backup folder
+    $FolderPathTest = Test-Path $PlexBackupFolderPath
+    If ($FolderPathTest -eq $false)
+    {    
+    mkdir $PlexBackupFolderPath   
+    }
+    
+    
+    mkdir $PlexBackupFolderPath_$BackupTime
+    
+    
+    # Function finds Plex registry keys and backs them up
     function PlexRegistryBackup
     {
-    
     # Backs up the Plex Registry
     Reg Export "HKCU\SOFTWARE\Plex, Inc." D:\PlexBackup\PlexBackup.reg
-    
     }
     
     function PlexRegistryRestore
