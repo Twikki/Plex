@@ -16,25 +16,23 @@
 #>
 
  
-do
- {
-Show-Menu
-$selection = Read-Host "Please make a selection"
-switch ($selection)
+function Show-Menu
 {
-'1' {
-PlexBackup
-} '2' {
-'You chose option #2'
-} '3' {
-'You chose option #3'
+    param (
+        [string]$Title = 'Plex Server Menu'
+    )
+    Clear-Host
+    Write-Host "================ $Title ================"
+    
+    Write-Host "1: Press '1' to take a full backup of your Plex server. Location: $PlexBackupFolderPath"
+    Write-Host "2: Press '2' to take REG database backup of your Plex server. Location: $PlexBackupFolderPath"
+    Write-Host "3: Press '3' for this option."
+    Write-Host "Q: Press 'Q' to quit."
 }
-}
-pause
-}
-until ($selection -eq 'q')
 
-function PlexBackup
+
+# Function to full Plex backup
+function FullPlexBackup
 {
 
 # Specifies Path for the backup
@@ -84,10 +82,52 @@ Start-Process -FilePath "C:\Program Files (x86)\Plex\Plex Media Server\Plex Medi
 
 }
 
+# Function to Reg database Plex backup
+function RegPlexBackup
+{
+
+# Specifies Path for the backup
+$PlexBackupFolderPath = "C:\PlexBackup"
+
+# Grabs the current date and time
+$BackupTime = ((Get-Date).ToString('dd-MM-yyyy_hh.mm.ss'))
+
+# Creates default Plex backup folder
+$FolderPathTest = Test-Path $PlexBackupFolderPath
+If ($FolderPathTest -eq $false)
+{    
+mkdir $PlexBackupFolderPath   
+}
+
+mkdir $PlexBackupFolderPath\$BackupTime
+
+
+# Backs up the Plex Registry
+Reg Export "HKCU\SOFTWARE\Plex, Inc." $PlexBackupFolderPath\$BackupTime\PlexReg.reg
+
+
+}
 
 
 
 
+# Logic runs here
+Show-Menu –Title 'Plex Server Menu'
+ $selection = Read-Host "Please make a selection"
+ switch ($selection)
+ {
+     '1' {
+         'Creating full backup of Plex server'
+         PlexBackup
+     } '2' {
+         'Creating REG backup of Plex server'
+         RegPlexBackup
+     } '3' {
+         'You chose option #3'
+     } 'q' {
+         return
+     }
+ }
 
 
 
