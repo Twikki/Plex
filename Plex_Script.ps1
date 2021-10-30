@@ -35,14 +35,14 @@ function Show-Title() {
     {
     
     # Backs up the Plex Registry
-    Reg Export "HKCU\SOFTWARE\Plex, Inc." PlexBackup.reg
+    Reg Export "HKCU\SOFTWARE\Plex, Inc." D:\PlexBackup\PlexBackup.reg
     
     }
     
     function PlexRegistryRestore
     {
     # Restores Plex registry
-    reg import PlexBackup.reg
+    reg import D:\PlexBackup\PlexBackup.reg
     
     }
     
