@@ -15,45 +15,127 @@
     This script gives different possibilities to manipulate Plex running on Windows
 #>
 
-function Show-Title() {
+ 
+function Show-Menu
+{
+    param (
+        [string]$Title = 'Plex Server Menu'
+    )
+    Clear-Host
+    Write-Host "================ $Title ================"
+    
+    Write-Host "1: Press '1' to take a full backup of your Plex server. Location: $PlexBackupFolderPath"
+    Write-Host "2: Press '2' to take REG database backup of your Plex server. Location: $PlexBackupFolderPath"
+    Write-Host "3: Press '3' for this option."
+    Write-Host "Q: Press 'Q' to quit."
+}
 
 
-    Write-Host "                                                      " -ForegroundColor Green
-    Write-Host "  _____  _      ________   __   _____  _____ _____  _____ _____ _______ " -ForegroundColor Green
-    Write-Host " |  __ \| |    |  ____\ \ / /  / ____|/ ____|  __ \|_   _|  __ \__   __|" -ForegroundColor Green
-    Write-Host " | |__) | |    | |__   \ V /  | (___ | |    | |__) | | | | |__) | | |   " -ForegroundColor Green
-    Write-Host " |  ___/| |    |  __|   > <    \___ \| |    |  _  /  | | |  ___/  | |   " -ForegroundColor Green
-    Write-Host " | |    | |____| |____ / . \   ____) | |____| | \ \ _| |_| |      | |   " -ForegroundColor Green
-    Write-Host " |_|    |______|______/_/ \_\ |_____/ \_____|_|  \_\_____|_|      |_|   " -ForegroundColor Green
-    
-    
-    }
-    
-    # Specifies Path for the backup
-    $PlexBackupFolderPath = "C:\PlexBackup"
-    
-    # Grabs the current date and time
-    $BackupTime = Get-Date -Format "yyyy/dd/MM_hh.mm.ss"
-    
-    
-    # Creates default Plex backup folder
-    $FolderPathTest = Test-Path $PlexBackupFolderPath
-    If ($FolderPathTest -eq $false)
-    {    
-    mkdir $PlexBackupFolderPath   
-    }
-    
-    
-    mkdir $PlexBackupFolderPath_$BackupTime
-    
-    
-    # Function finds Plex registry keys and backs them up
-    function PlexRegistryBackup
-    {
-    # Backs up the Plex Registry
-    Reg Export "HKCU\SOFTWARE\Plex, Inc." D:\PlexBackup\PlexBackup.reg
-    }
-    
+# Function to full Plex backup
+function FullPlexBackup
+{
+
+# Specifies Path for the backup
+$PlexBackupFolderPath = "C:\PlexBackup"
+
+# Grabs the current date and time
+$BackupTime = ((Get-Date).ToString('dd-MM-yyyy_hh.mm.ss'))
+
+# Creates default Plex backup folder
+$FolderPathTest = Test-Path $PlexBackupFolderPath
+If ($FolderPathTest -eq $false)
+{    
+mkdir $PlexBackupFolderPath   
+}
+
+mkdir $PlexBackupFolderPath\$BackupTime
+
+
+# Backs up the Plex Registry
+Reg Export "HKCU\SOFTWARE\Plex, Inc." $PlexBackupFolderPath\$BackupTime\PlexReg.reg
+
+# Plex Media Server
+if(get-process | ?{$_.path -eq "C:\Program Files (x86)\Plex\Plex Media Server\Plex Media Server.exe"})
+
+{
+Write-host 'Plex Media Server is running, stopping server' -ForegroundColor Green
+Stop-Process -Name "Plex Media Server" -Force
+Stop-Process -Name "Plex Tuner Service" -Force
+Stop-Process -Name "Plex Update Service" -Force
+Stop-Process -Name "PlexScriptHost" -Force
+}
+
+# Backs up the Plex datafolder
+Compress-Archive -Path "$env:userprofile\appdata\Local\Plex Media Server" -DestinationPath $PlexBackupFolderPath\$BackupTime\PlexDatabase.zip
+
+# Plex Media Server
+if(get-process | ?{$_.path -eq "C:\Program Files (x86)\Plex\Plex Media Server\Plex Media Server.exe"})
+
+{
+Write-Host 'Plex Media Server is running' -ForegroundColor Green
+}
+else
+{
+Write-host 'Plex Media Server is not running, starting server.' -ForegroundColor Red
+Start-Process -FilePath "C:\Program Files (x86)\Plex\Plex Media Server\Plex Media Server.exe" -WindowStyle Minimized
+}
+
+}
+
+# Function to Reg database Plex backup
+function RegPlexBackup
+{
+
+# Specifies Path for the backup
+$PlexBackupFolderPath = "C:\PlexBackup"
+
+# Grabs the current date and time
+$BackupTime = ((Get-Date).ToString('dd-MM-yyyy_hh.mm.ss'))
+
+# Creates default Plex backup folder
+$FolderPathTest = Test-Path $PlexBackupFolderPath
+If ($FolderPathTest -eq $false)
+{    
+mkdir $PlexBackupFolderPath   
+}
+
+mkdir $PlexBackupFolderPath\$BackupTime
+
+
+# Backs up the Plex Registry
+Reg Export "HKCU\SOFTWARE\Plex, Inc." $PlexBackupFolderPath\$BackupTime\PlexReg.reg
+
+
+}
+
+
+
+
+# Logic runs here
+Show-Menu –Title 'Plex Server Menu'
+ $selection = Read-Host "Please make a selection"
+ switch ($selection)
+ {
+     '1' {
+         'Creating full backup of Plex server'
+         PlexBackup
+     } '2' {
+         'Creating REG backup of Plex server'
+         RegPlexBackup
+     } '3' {
+         'You chose option #3'
+     } 'q' {
+         return
+     }
+ }
+
+
+
+    <#
+
+
+    NOT IMPLEMENTED FEATURES
+
     function PlexRegistryRestore
     {
     # Restores Plex registry
@@ -61,35 +143,5 @@ function Show-Title() {
     
     }
     
-    function PlexDataBaseBackup
-    {
     
-    # Plex Media Server
-    if(get-process | ?{$_.path -eq "C:\Program Files (x86)\Plex\Plex Media Server\Plex Media Server.exe"})
-    
-    {
-        Write-host 'Plex Media Server is running, stopping server' -ForegroundColor Green
-        Stop-Process -Name "Plex Media Server" -Force
-        Stop-Process -Name "Plex Tuner Service" -Force
-        Stop-Process -Name "Plex Update Service" -Force
-        Stop-Process -Name "PlexScriptHost" -Force
-    }
-    
-    
-    # Backs up the Plex datafolder
-    Compress-Archive -Path "$env:userprofile\appdata\Local\Plex Media Server" -DestinationPath D:\PlexBackup.zip
-    
-    # Plex Media Server
-    if(get-process | ?{$_.path -eq "C:\Program Files (x86)\Plex\Plex Media Server\Plex Media Server.exe"})
-    
-    {
-        Write-Host 'Plex Media Server is running' -ForegroundColor Green
-    }
-    else
-    {
-        Write-host 'Plex Media Server is not running, starting server.' -ForegroundColor Red
-        Start-Process -FilePath "C:\Program Files (x86)\Plex\Plex Media Server\Plex Media Server.exe" -WindowStyle Minimized
-    }
-    
-    }
-    
+    #>
